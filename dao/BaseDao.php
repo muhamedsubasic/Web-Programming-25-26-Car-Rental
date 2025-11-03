@@ -5,19 +5,17 @@ class BaseDao {
    protected $table;
    protected $connection;
 
-
    public function __construct($table) {
        $this->table = $table;
        $this->connection = Database::connect();
    }
 
-
+# READ(GET)
    public function getAll() {
     $stmt = $this->connection->prepare("SELECT * FROM " . $this->table);
     $stmt->execute();
     return $stmt->fetchAll();
 }
-
 
 public function getById($id) {
     $stmt = $this->connection->prepare("SELECT * FROM " . $this->table . " WHERE id = :id");
@@ -26,7 +24,7 @@ public function getById($id) {
     return $stmt->fetch();
 }
 
-
+# CREATE(POST)
 public function insert($data) {
     $columns = implode(", ", array_keys($data));
     $placeholders = ":" . implode(", :", array_keys($data));
@@ -35,8 +33,8 @@ public function insert($data) {
     return $stmt->execute($data);
 }
 
-
-public function update($id, $data) {
+# UPDATE(PUT/PATCH)
+public function updateById($id, $data) {
     $fields = "";
     foreach ($data as $key => $value) {
         $fields .= "$key = :$key, ";
@@ -48,7 +46,7 @@ public function update($id, $data) {
     return $stmt->execute($data);
 }
 
-
+# DELETE(DELETE)
 public function delete($id) {
     $stmt = $this->connection->prepare("DELETE FROM " . $this->table . " WHERE id = :id");
     $stmt->bindParam(':id', $id);
