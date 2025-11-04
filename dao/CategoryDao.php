@@ -1,40 +1,29 @@
 <?php
-require_once 'config.php';
+require_once 'BaseDao.php';
 
-class CategoryDao extends BaseDao{
-    public static function create($name, $description) {
-        global $pdo;
-        $stmt = $pdo->prepare("INSERT INTO category (name, description) VALUES (?, ?)");
-        return $stmt->execute([$name, $description]);
+class CategoryDao extends BaseDao {
+    public function __construct() {
+        parent::__construct("category");
     }
 
-    // get single category
-    public static function getById($id) {
-        global $pdo;
-        $stmt = $pdo->prepare("SELECT * FROM category WHERE id = ?");
-        $stmt->execute([$id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+    public function create($name, $description) {
+        return $this->insert([
+            'name' => $name,
+            'description' => $description
+        ]);
     }
 
-    // update category
-    public static function update($id, $name, $description) {
-        global $pdo;
-        $stmt = $pdo->prepare("UPDATE category SET name = ?, description = ? WHERE id = ?");
-        return $stmt->execute([$name, $description, $id]);
-    }
-
-    // delete category
-    public static function delete($id) {
-        global $pdo;
-        $stmt = $pdo->prepare("DELETE FROM category WHERE id = ?");
-        return $stmt->execute([$id]);
-    }
-
-    // get categories
-    public static function getAll() {
-        global $pdo;
-        $stmt = $pdo->query("SELECT * FROM category");
+    public function getAll() {
+        $stmt = $this->connection->prepare("SELECT * FROM category ORDER BY name ASC");
+        $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getById($id) {
+        $stmt = $this->connection->prepare("SELECT * FROM category WHERE id = :id");
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 }
 ?>
