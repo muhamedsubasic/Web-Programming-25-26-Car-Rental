@@ -1,5 +1,5 @@
 <?php
-require_once 'config.php';
+require_once __DIR__ . '/rest/config.php';
 
 class TestDatabaseSetup {
     private $connection;
@@ -22,7 +22,6 @@ class TestDatabaseSetup {
     }
     
     public function insertTestData() {
-        // Insert test users
         $users = [
             ['John', 'Doe', 'john@test.com', 'password123', '123456789', 'customer'],
             ['Jane', 'Smith', 'jane@test.com', 'password123', '987654321', 'customer'],
