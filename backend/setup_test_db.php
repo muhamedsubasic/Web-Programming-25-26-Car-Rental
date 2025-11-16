@@ -5,20 +5,34 @@ class TestDatabaseSetup {
     private $connection;
     
     public function __construct() {
-        $this->connection = Database::connect();
+        try {
+            $this->connection = Database::connect();
+            if (!($this->connection instanceof PDO)) {
+                throw new Exception('Database::connect() did not return a PDO instance');
+            }
+            echo "Connected to database: " . \Config::DB_NAME() . "\n";
+        } catch (Exception $e) {
+            echo "Database connection error: " . $e->getMessage() . "\n";
+            exit(1);
+        }
     }
     
     public function clearTestData() {
-        $tables = ['review', 'booking', 'car', 'category', 'users'];
-        
+    $tables = ['review', 'booking', 'car', 'category', 'users'];
+
+    try {
+        $this->connection->exec('SET FOREIGN_KEY_CHECKS=0');
         foreach ($tables as $table) {
-            try {
-                $this->connection->exec("DELETE FROM $table");
-                echo "Cleared $table table\n";
-            } catch (PDOException $e) {
-                echo "Error clearing $table: " . $e->getMessage() . "\n";
-            }
+            $q = "TRUNCATE TABLE `" . str_replace('`','', $table) . "`";
+            $this->connection->exec($q);
+            echo "Truncated $table table\n";
         }
+        $this->connection->exec('SET FOREIGN_KEY_CHECKS=1');
+    } catch (PDOException $e) {
+        echo "Error truncating tables: " . $e->getMessage() . "\n";
+        try { $this->connection->exec('SET FOREIGN_KEY_CHECKS=1'); } catch (Exception $_) {}
+        exit(1);
+    }
     }
     
     public function insertTestData() {
@@ -28,14 +42,16 @@ class TestDatabaseSetup {
             ['Admin', 'User', 'admin@test.com', 'admin123', '555555555', 'admin']
         ];
         
-        foreach ($users as $user) {
-            $stmt = $this->connection->prepare(
-                "INSERT INTO users (name, surname, email, password, phone, role, created_at) 
-                 VALUES (?, ?, ?, ?, ?, ?, NOW())"
-            );
-            $stmt->execute($user);
-        }
-        echo "Inserted test users\n";
+        try {
+            $this->connection->beginTransaction();
+            foreach ($users as $user) {
+                $stmt = $this->connection->prepare(
+                    "INSERT INTO `users` (name, surname, email, password, phone, role, created_at) 
+                     VALUES (?, ?, ?, ?, ?, ?, NOW())"
+                );
+                $stmt->execute($user);
+            }
+            echo "Inserted test users\n";
         
         $categories = [
             ['Economy', 'Budget-friendly cars'],
@@ -43,13 +59,13 @@ class TestDatabaseSetup {
             ['Luxury', 'Premium vehicles']
         ];
         
-        foreach ($categories as $category) {
-            $stmt = $this->connection->prepare(
-                "INSERT INTO category (name, description, created_at) VALUES (?, ?, NOW())"
-            );
-            $stmt->execute($category);
-        }
-        echo "Inserted test categories\n";
+            foreach ($categories as $category) {
+                $stmt = $this->connection->prepare(
+                    "INSERT INTO `category` (name, description, created_at) VALUES (?, ?, NOW())"
+                );
+                $stmt->execute($category);
+            }
+            echo "Inserted test categories\n";
         
         $cars = [
             [1, 1, 'Civic', 'Honda', 1, 45.00],
@@ -57,14 +73,20 @@ class TestDatabaseSetup {
             [3, 2, 'Model S', 'Tesla', 1, 120.00]
         ];
         
-        foreach ($cars as $car) {
-            $stmt = $this->connection->prepare(
-                "INSERT INTO car (category_id, user_id, model, brand, availability, daily_rate, created_at) 
-                 VALUES (?, ?, ?, ?, ?, ?, NOW())"
-            );
-            $stmt->execute($car);
+            foreach ($cars as $car) {
+                $stmt = $this->connection->prepare(
+                    "INSERT INTO `car` (category_id, user_id, model, brand, availability, daily_rate, created_at) 
+                     VALUES (?, ?, ?, ?, ?, ?, NOW())"
+                );
+                $stmt->execute($car);
+            }
+            $this->connection->commit();
+            echo "Inserted test cars\n";
+        } catch (PDOException $e) {
+            $this->connection->rollBack();
+            echo "Error inserting test data: " . $e->getMessage() . "\n";
+            exit(1);
         }
-        echo "Inserted test cars\n";
     }
 }
 
