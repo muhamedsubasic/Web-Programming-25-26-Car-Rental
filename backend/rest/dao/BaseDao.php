@@ -30,7 +30,11 @@ public function insert($data) {
     $placeholders = ":" . implode(", :", array_keys($data));
     $sql = "INSERT INTO " . $this->table . " ($columns) VALUES ($placeholders)";
     $stmt = $this->connection->prepare($sql);
-    return $stmt->execute($data);
+    $executed = $stmt->execute($data);
+    if ($executed) {
+        return $this->connection->lastInsertId();
+    }
+    return false;
 }
 
 # UPDATE(PUT/PATCH)

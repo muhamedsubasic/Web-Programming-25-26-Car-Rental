@@ -28,7 +28,7 @@ class Config
 
     public static function JWT_SECRET()
     {
-        return 'your_key_string';
+        return '6aebb34d6a169bacb2394acad96b41318bb3376e8b151dd35388e63e5092d0d6';
     }
 }
 
